@@ -1,6 +1,6 @@
 import React from 'react'
 import Image from 'next/image'
-import logo from '@/public/AlzybuD.png' 
+import logo from '../../../public/AlzybuD.png' 
 import { navlinks } from '@/public/constants/constants'
 import Link from 'next/link'
 export default function Navbar() {
