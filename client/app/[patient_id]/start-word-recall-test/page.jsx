@@ -3,9 +3,9 @@
 import React from 'react';
 import { useParams } from 'next/navigation';
 
-import TaskHeading from '@/app/components/TaskHeading/TaskHeading';
-import Btn from '@/app/components/Btn/Btn'
-import Paragraph from '@/app/components/Paragraph/Paragraph';
+import TaskHeading from '../../components/TaskHeading/TaskHeading';
+import Btn from '../../components/Btn/Btn'
+import Paragraph from '../../components/Paragraph/Paragraph';
 import Link from 'next/link';
 
 export default function MainPage() {

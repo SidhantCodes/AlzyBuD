@@ -1,6 +1,7 @@
 'use client'
 import React, { useState, useEffect } from 'react';
 
+
 const Page = () => {
   const [patientId, setPatientId] = useState('');
   const questions = [

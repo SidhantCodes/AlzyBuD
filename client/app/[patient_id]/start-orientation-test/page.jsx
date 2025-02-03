@@ -3,11 +3,7 @@
 import React from 'react';
 import { useParams } from 'next/navigation';
 
-import TaskHeading from '@/app/components/TaskHeading/TaskHeading';
-import Btn from '@/app/components/Btn/Btn'
-import Paragraph from '@/app/components/Paragraph/Paragraph';
-import Link from 'next/link';
-import SubHeading from '@/app/components/SubHeading/SubHeading';
+
 
 export default function MainPage() {
     const { 'patient_id': patientId } = useParams()
