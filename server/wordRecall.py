@@ -8,11 +8,11 @@ from metaphone import doublemetaphone
 from Levenshtein import distance as levenshtein_distance
 import time
 
-from vocablist import vocab_list
+from vocablist2 import vocab_list
 # Initialize Whisper pipeline
 pipe = pipeline("automatic-speech-recognition", model="openai/whisper-small.en")
 
-def record_user_audio(duration=30, freq=44100):
+def record_user_audio(duration=20, freq=44100):
     print("Recording started...")
     recording = sd.rec(int(duration * freq), samplerate=freq, channels=2)
     sd.wait()
@@ -50,7 +50,7 @@ def generate_word_list(vocablist):
 
     return selected_words
 
-def compare_words(target_word, spoken_word, threshold=0.66):
+def compare_words(target_word, spoken_word, threshold=0.80):
     # Convert to lowercase
     target_word = target_word.lower()
     spoken_word = spoken_word.lower()
@@ -93,23 +93,34 @@ def compare_words(target_word, spoken_word, threshold=0.66):
     return False
 
 def process_recognized(target_list, recognized_text):
-    count_not_recalled = len(target_list)
     recognized_words = recognized_text.lower().split()
     target_words = [word.lower() for word in target_list]
 
-    # Track which target words have been matched
+    # Track matched words
     matched_words = set()
-
+    
     for recognized_word in recognized_words:
         for target_word in target_words:
             if compare_words(target_word, recognized_word) and target_word not in matched_words:
                 print(f"Matched: {recognized_word} -> {target_word}")
                 matched_words.add(target_word)  # Mark the target word as matched
-                count_not_recalled -= 1
-                break  # Move to the next recognized word after a match
+                break  # Stop checking this recognized word
 
-    print(f"\nNumber of words not recalled: {count_not_recalled}")
-    return count_not_recalled 
+    # Compute recalled and unrecalled words
+    recalled_words = list(matched_words)
+    unrecalled_words = [word for word in target_words if word not in matched_words]
+    num_recalled = len(recalled_words)
+
+    print(f"\nRecalled Words: {recalled_words}")
+    print(f"Unrecalled Words: {unrecalled_words}")
+    print(f"Number of Words Recalled: {num_recalled}")
+
+    return {
+        "recalled_words": recalled_words,
+        "unrecalled_words": unrecalled_words,
+        "num_recalled": num_recalled
+    }
+
 
 def main():
     word_list = generate_word_list(vocab_list)

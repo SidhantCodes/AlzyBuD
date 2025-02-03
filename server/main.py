@@ -9,12 +9,14 @@ import bcrypt
 import smtplib
 from email.mime.text import MIMEText
 from auth import router as auth_router
+from recall_api import router as recall_router 
 
 
 load_dotenv()
 
 app = FastAPI()
 app.include_router(auth_router)
+app.include_router(recall_router)
 
 mongo_uri = os.getenv("MONGO_URI")
 database_name = os.getenv("DATABASE_NAME")
