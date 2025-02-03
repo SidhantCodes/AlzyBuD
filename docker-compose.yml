@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: moca_mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword  # Change this
+      MYSQL_DATABASE: moca_db
+      MYSQL_USER: moca_user             # Change this
+      MYSQL_PASSWORD: moca_password     # Change this
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./server/init:/docker-entrypoint-initdb.d  # Adjusted path to your init scripts
+    networks:
+      - moca_network
+
+volumes:
+  mysql_data:
+
+networks:
+  moca_network:
