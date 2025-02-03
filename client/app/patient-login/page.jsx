@@ -1,10 +1,12 @@
-'use client'
+'use client';
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Navbar from '../components/Navbar/Navbar';
 import SubHeading from '../components/SubHeading/SubHeading';
 import Heading from '../components/Heading/Heading';
 
 const Page = () => {
+  const router = useRouter();
   const [formData, setFormData] = useState({
     patientId: '',
     password: '',
@@ -27,11 +29,19 @@ const Page = () => {
     return newErrors;
   };
 
+  const dummyValidation = (patientId, password) => {
+    return patientId === 'patient123' && password === 'password123'; // Dummy credentials
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     const validationErrors = validate();
     if (Object.keys(validationErrors).length === 0) {
-      console.log('Success:', formData);
+      if (dummyValidation(formData.patientId, formData.password)) {
+        router.push(`/${formData.patientId}/start-word-recall-test`);
+      } else {
+        setErrors({ general: 'Invalid Patient ID or Password!' });
+      }
     } else {
       setErrors(validationErrors);
     }
@@ -75,8 +85,10 @@ const Page = () => {
             {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
           </div>
 
+          {errors.general && <p className="text-red-500 text-sm mb-4">{errors.general}</p>}
+
           <button type="submit" className="w-full py-3 rounded-lg bg-green-500 text-white font-bold hover:bg-green-600 transition duration-300 ease-in-out">
-            Register now
+            Login
           </button>
         </form>
 
@@ -86,4 +98,4 @@ const Page = () => {
   );
 };
 
-export default Page; 
+export default Page;
