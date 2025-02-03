@@ -11,7 +11,7 @@ const Page = () => {
     patientId: '',
     password: '',
   });
-
+  const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
 
   const handleChange = (e) => {
@@ -29,18 +29,36 @@ const Page = () => {
     return newErrors;
   };
 
-  const dummyValidation = (patientId, password) => {
-    return patientId === 'patient123' && password === 'password123'; // Dummy credentials
-  };
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const validationErrors = validate();
+    
     if (Object.keys(validationErrors).length === 0) {
-      if (dummyValidation(formData.patientId, formData.password)) {
-        router.push(`/${formData.patientId}/start-word-recall-test`);
-      } else {
-        setErrors({ general: 'Invalid Patient ID or Password!' });
+      setIsLoading(true);
+      try {
+        const response = await fetch('http://localhost:8000/login', {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            patient_id: formData.patientId,
+            password: formData.password,
+          }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          router.push(`/${formData.patientId}/start-word-recall-test`);
+        } else {
+          const errorData = await response.json();
+          setErrors({ general: errorData.detail || 'Invalid Patient ID or Password!' });
+        }
+      } catch (error) {
+        setErrors({ general: 'An error occurred during login. Please try again.' });
+      } finally {
+        setIsLoading(false);
       }
     } else {
       setErrors(validationErrors);
@@ -87,8 +105,12 @@ const Page = () => {
 
           {errors.general && <p className="text-red-500 text-sm mb-4">{errors.general}</p>}
 
-          <button type="submit" className="w-full py-3 rounded-lg bg-green-500 text-white font-bold hover:bg-green-600 transition duration-300 ease-in-out">
-            Login
+          <button 
+            type="submit" 
+            disabled={isLoading}
+            className="w-full py-3 rounded-lg bg-green-500 text-white font-bold hover:bg-green-600 transition duration-300 ease-in-out disabled:bg-green-400 disabled:cursor-not-allowed"
+          >
+            {isLoading ? 'Logging in...' : 'Login'}
           </button>
         </form>
 
