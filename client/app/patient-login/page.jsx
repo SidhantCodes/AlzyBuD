@@ -11,7 +11,7 @@ const Page = () => {
     patientId: '',
     password: '',
   });
-
+  const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
 
   const handleChange = (e) => {
@@ -34,10 +34,11 @@ const Page = () => {
     const validationErrors = validate();
     
     if (Object.keys(validationErrors).length === 0) {
+      setIsLoading(true);
       try {
         const response = await fetch('http://localhost:8000/login', {
           method: 'POST',
-          credentials: 'include', // Important for handling cookies
+          credentials: 'include',
           headers: {
             'Content-Type': 'application/json',
           },
@@ -49,7 +50,6 @@ const Page = () => {
 
         if (response.ok) {
           const data = await response.json();
-          // The auth token will be automatically set as a cookie by the backend
           router.push(`/${formData.patientId}/start-word-recall-test`);
         } else {
           const errorData = await response.json();
@@ -57,6 +57,8 @@ const Page = () => {
         }
       } catch (error) {
         setErrors({ general: 'An error occurred during login. Please try again.' });
+      } finally {
+        setIsLoading(false);
       }
     } else {
       setErrors(validationErrors);
@@ -103,8 +105,12 @@ const Page = () => {
 
           {errors.general && <p className="text-red-500 text-sm mb-4">{errors.general}</p>}
 
-          <button type="submit" className="w-full py-3 rounded-lg bg-green-500 text-white font-bold hover:bg-green-600 transition duration-300 ease-in-out">
-            Login
+          <button 
+            type="submit" 
+            disabled={isLoading}
+            className="w-full py-3 rounded-lg bg-green-500 text-white font-bold hover:bg-green-600 transition duration-300 ease-in-out disabled:bg-green-400 disabled:cursor-not-allowed"
+          >
+            {isLoading ? 'Logging in...' : 'Login'}
           </button>
         </form>
 
