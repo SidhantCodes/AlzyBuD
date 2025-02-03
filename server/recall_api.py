@@ -131,10 +131,11 @@ def word_recall(
     recognized_words = recognized_text.lower().split()
     recalled_words = output_from_model["recalled_words"]
     unrecalled_words = output_from_model["unrecalled_words"]
-    score= output_from_model["num_recalled"]
+    score= output_from_model["num_not_recalled"]
 
     # Store data in MongoDB
     test_record = {
+        "test_name": "word_recall",
         "patient_id": patient_id,
         "recalled_words": recalled_words,
         "unrecalled_words": unrecalled_words,

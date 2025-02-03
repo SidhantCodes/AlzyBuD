@@ -113,12 +113,12 @@ def process_recognized(target_list, recognized_text):
 
     print(f"\nRecalled Words: {recalled_words}")
     print(f"Unrecalled Words: {unrecalled_words}")
-    print(f"Number of Words Recalled: {num_recalled}")
+    print(f"Number of Words not recalled: {10-num_recalled}")
 
     return {
         "recalled_words": recalled_words,
         "unrecalled_words": unrecalled_words,
-        "num_recalled": num_recalled
+        "num_not_recalled": 10-num_recalled
     }
 
 
