@@ -1,5 +1,5 @@
 
-import Button from "./components/Button/Button";
+import Button from "./components/Btn/Btn";
 import Heading from "./components/Heading/Heading";
 import MiniHeading from "./components/MiniHeading/MiniHeading";
 import Navbar from "./components/Navbar/Navbar";
@@ -16,7 +16,7 @@ export default function MainPage() {
           <div className="bg-black mx-24 h-0.5 rounded-full "></div>
           <SubHeading subhead={`Strength in care, even when memories fade`}  />
           <Paragraph para={`Our platform provides hospitals with powerful tools designed to optimize the care process for Alzheimer’s patients. From test score analysis to tracking patient sessions, we ensure you have everything you need at your fingertips.`} />
-          <Button name={`Take test now`} />
+          <Btn name={`Take test now`} />
           <MiniHeading minhead={`About us`} />
         </div>
       </div>

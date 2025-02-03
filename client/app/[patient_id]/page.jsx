@@ -1,7 +1,7 @@
 // app/page.jsx
 
 import TaskHeading from '../components/TaskHeading/TaskHeading';
-import Button from '../components/Button/Button';
+import Button from '../components/Btn/Btn';
 import Paragraph from '../components/Paragraph/Paragraph';
 import Link from 'next/link';
 import Navbar from '../components/Navbar/Navbar';
