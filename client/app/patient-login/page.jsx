@@ -29,18 +29,34 @@ const Page = () => {
     return newErrors;
   };
 
-  const dummyValidation = (patientId, password) => {
-    return patientId === 'patient123' && password === 'password123'; // Dummy credentials
-  };
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const validationErrors = validate();
+    
     if (Object.keys(validationErrors).length === 0) {
-      if (dummyValidation(formData.patientId, formData.password)) {
-        router.push(`/${formData.patientId}/start-word-recall-test`);
-      } else {
-        setErrors({ general: 'Invalid Patient ID or Password!' });
+      try {
+        const response = await fetch('http://localhost:8000/login', {
+          method: 'POST',
+          credentials: 'include', // Important for handling cookies
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            patient_id: formData.patientId,
+            password: formData.password,
+          }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          // The auth token will be automatically set as a cookie by the backend
+          router.push(`/${formData.patientId}/start-word-recall-test`);
+        } else {
+          const errorData = await response.json();
+          setErrors({ general: errorData.detail || 'Invalid Patient ID or Password!' });
+        }
+      } catch (error) {
+        setErrors({ general: 'An error occurred during login. Please try again.' });
       }
     } else {
       setErrors(validationErrors);
