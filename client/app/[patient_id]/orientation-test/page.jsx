@@ -1,6 +1,5 @@
 'use client'
 import React, { useState, useEffect } from 'react';
-import Btn from '@/app/components/Btn/Btn';
 
 const Page = () => {
   const [patientId, setPatientId] = useState('');
