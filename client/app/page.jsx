@@ -1,5 +1,5 @@
 
-import Button from "./components/Btn/Btn";
+import Btn from "./components/Btn/Btn";
 import Heading from "./components/Heading/Heading";
 import MiniHeading from "./components/MiniHeading/MiniHeading";
 import Navbar from "./components/Navbar/Navbar";
