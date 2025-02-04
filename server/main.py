@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware  # Add this import
 from pydantic import BaseModel, EmailStr
 from pymongo import MongoClient
 import os
@@ -9,12 +10,24 @@ import bcrypt
 import smtplib
 from email.mime.text import MIMEText
 from auth import router as auth_router
-
+from recall_api import router as recall_router 
+from orientation import router as orientation_router
 
 load_dotenv()
 
 app = FastAPI()
+# Add CORS middleware configuration
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3001","http://localhost:3000"],  # Allows all origins
+    allow_credentials=True,
+    allow_methods=["*"],  # Allows all methods
+    allow_headers=["*"],  # Allows all headers
+)
+
 app.include_router(auth_router)
+app.include_router(recall_router)
+app.include_router(orientation_router)
 
 mongo_uri = os.getenv("MONGO_URI")
 database_name = os.getenv("DATABASE_NAME")
@@ -68,7 +81,9 @@ def hash_password(password: str):
 #         print(f"Email successfully sent to {to_email}")  # Print statement on successful send
 #     except Exception as e:
 #         raise HTTPException(status_code=500, detail=f"Failed to send email: {str(e)}")
-
+@app.options("/login")
+async def preflight():
+    return {}
 @app.post("/add_patient")
 async def add_patient(patient: PatientDetails):
     patient_id = generate_patient_id()

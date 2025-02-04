@@ -55,7 +55,7 @@ async def login(response: Response, login_request: LoginRequest):
         httponly=True, 
         secure=True, 
         expires=expires_at,
-        samesite="Strict"
+        samesite="None"
     )
 
     return {"message": "Login successful", "token": token}
