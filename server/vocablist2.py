@@ -1,0 +1,1 @@
+vocab_list = ["lemon","phantom","settler","monarch","friction","festivity","nursery","noose","spirit","honor"]
