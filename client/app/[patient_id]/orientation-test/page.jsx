@@ -28,6 +28,7 @@ const Page = () => {
   const alphabet = Array.from({ length: 26 }, (_, i) => String.fromCharCode(65 + i));
   const firstRow = alphabet.slice(0, 13);
   const secondRow = alphabet.slice(13);
+  const row = ["1","2","3","4","5","6","7","8","9",'0',":"];
 
   const handleKeyboardToggle = () => {
     setIsOnScreenKeyboard(!isOnScreenKeyboard);
@@ -93,6 +94,18 @@ const Page = () => {
 
           <div className="flex flex-wrap justify-center gap-2 mb-4">
             {secondRow.map((char) => (
+              <button
+                key={char}
+                onClick={() => handleKeyPress(char)}
+                className="w-12 h-12 bg-white rounded-lg shadow-md hover:shadow-lg text-xl font-medium"
+              >
+                {char}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex flex-wrap justify-center gap-2 mb-4">
+            {row.map((char) => (
               <button
                 key={char}
                 onClick={() => handleKeyPress(char)}

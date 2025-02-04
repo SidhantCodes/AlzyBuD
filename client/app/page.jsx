@@ -21,7 +21,7 @@ export default function MainPage() {
           <Link href="/patient-login">
             <Btn name={`Take test now`} />
           </Link>
-          <MiniHeading minhead={`About us`} />
+          {/* <MiniHeading minhead={`About us`} /> */}
         </div>
       </div>
   );
