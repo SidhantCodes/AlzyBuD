@@ -7,6 +7,7 @@ import TaskHeading from '../../components/TaskHeading/TaskHeading';
 import Btn from '../../components/Btn/Btn'
 import Paragraph from '../../components/Paragraph/Paragraph';
 import Link from 'next/link';
+// import Cookies from 'js-cookie';
 
 export default function MainPage() {
     const params = useParams();

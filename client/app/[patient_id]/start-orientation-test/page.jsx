@@ -5,29 +5,22 @@ import { useParams } from 'next/navigation';
 import TaskHeading from '../../components/TaskHeading/TaskHeading';
 import SubHeading from '../../components/SubHeading/SubHeading';
 import Paragraph from '../../components/Paragraph/Paragraph';
-import Btn from '../../components/Btn/Btn';
+import Btn from '../../components/Btn/Btn'
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 
-const Page = () => {
-    const params = useParams();
-    const patient_id = params.patient_id;
-    const router = useRouter();
 
+export default function MainPage() {
+    const { 'patient_id': patientId } = useParams()
     return (
-        <div className="container mx-auto p-4 flex flex-col items-center justify-center">
-            <TaskHeading heading="Orientation Test" />
-            <SubHeading subhead="Let's check your orientation" />
-            <div className="mt-8 max-w-2xl w-full">
-                <Paragraph para="In this test, you'll be asked questions about time, place, and situation to assess your orientation." />
-                <div className="mt-8 flex justify-center">
-                    <Link href={`/${patient_id}/orientation-test/`} className='mt-12 py-2 rounded-lg text-white font-bold bg-green-500 hover:bg-green-600 transition duration-300 ease-in-out px-20 '>
-                    Start Test
-                    </Link>
-                </div>
-            </div>
+        <div className="flex justify-center text-center mx-10 flex-col items-center min-h-[calc(100vh-64px)]">
+        <TaskHeading heading="Orientation" />
+        <SubHeading subhead="Instruction"/>
+        <Paragraph para="We will ask you a few questions about general information, such as the day, date, and place. Please answer each question to the best of your ability"/>    
+        <Link href={`/${patientId}/orientation-test`}>
+            <Btn name="Start the test"/>
+        </Link>
         </div>
     );
 };
 
-export default Page;
+// export default Page;

@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import Navbar from '../components/Navbar/Navbar';
 import SubHeading from '../components/SubHeading/SubHeading';
 import Heading from '../components/Heading/Heading';
+// import Cookies from 'js-cookie';
 
 const Page = () => {
   const router = useRouter();
@@ -50,6 +51,8 @@ const Page = () => {
 
         if (response.ok) {
           const data = await response.json();
+          // const authToken = cookies().get("auth_token");
+          // console.log(authToken);
           router.push(`/${formData.patientId}/start-word-recall-test`);
         } else {
           const errorData = await response.json();

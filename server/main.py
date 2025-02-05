@@ -1,4 +1,5 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware  # Add this import
 from pydantic import BaseModel, EmailStr
 from pymongo import MongoClient
 import os
@@ -9,12 +10,25 @@ import bcrypt
 import smtplib
 from email.mime.text import MIMEText
 from auth import router as auth_router
-
+from recall_api import router as recall_router 
+from orientation import router as orientation_router
 
 load_dotenv()
 
 app = FastAPI()
+# Add CORS middleware configuration
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3001", "http://localhost:3000"],  # Specific frontend origins
+    allow_credentials=True,  # Allow credentials (cookies, authentication headers)
+    allow_methods=["GET", "POST", "OPTIONS"],  # Specify needed methods
+    allow_headers=["Content-Type", "Authorization"],  # Allow specific headers
+)
+
+
 app.include_router(auth_router)
+app.include_router(recall_router)
+app.include_router(orientation_router)
 
 mongo_uri = os.getenv("MONGO_URI")
 database_name = os.getenv("DATABASE_NAME")
@@ -68,7 +82,9 @@ def hash_password(password: str):
 #         print(f"Email successfully sent to {to_email}")  # Print statement on successful send
 #     except Exception as e:
 #         raise HTTPException(status_code=500, detail=f"Failed to send email: {str(e)}")
-
+@app.options("/login")
+async def preflight():
+    return {}
 @app.post("/add_patient")
 async def add_patient(patient: PatientDetails):
     patient_id = generate_patient_id()
@@ -87,6 +103,11 @@ async def add_patient(patient: PatientDetails):
         "patient_id": patient_id,
         "password": password  # Return plain password in response
     }
+
+@app.get("/auth-token")
+async def get_auth_token(request: Request):
+    auth_token = request.cookies.get("auth_token")
+    return {"auth_token": auth_token}
 
 if __name__ == "__main__":
     import uvicorn

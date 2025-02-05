@@ -1,277 +1,306 @@
-'use client'
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import SubHeading from '../../components/SubHeading/SubHeading';
+"use client"
+import { useState, useRef, useEffect } from 'react';
 import TaskHeading from '../../components/TaskHeading/TaskHeading';
-import WordDisplay from '../../components/WordDisplay/WordDisplay';
-import Paragraph from '../../components/Paragraph/Paragraph';
-import Btn from '../../components/Btn/Btn';
-import Image from 'next/image';
-import { useRouter, useParams } from 'next/navigation';
-import MicRecorder from 'mic-recorder';
-import { useDropzone } from 'react-dropzone';
 
-import clock from '../../../public/circle.svg';
-
-const Page = () => {
-  const router = useRouter();
-  const params = useParams();
-  const patient_id = params.patient_id;
-  const [stage, setStage] = useState('showWords');
-  const [currentWordIndex, setCurrentWordIndex] = useState(0);
-  const [attempt, setAttempt] = useState(1);
-  const [timer, setTimer] = useState(5);
-  const [recordingStarted, setRecordingStarted] = useState(false);
+const WordDisplayRecorder = () => {
+  const [patientId, setPatientId] = useState('');
   const [isRecording, setIsRecording] = useState(false);
-  const recorderRef = useRef(null);
-  const [audioFile, setAudioFile] = useState(null);
-  const [isUploading, setIsUploading] = useState(false);
-  const [error, setError] = useState('');
-
-  const words = ['Flower', 'Mountain', 'Elephant', 'Sunshine', 'Ocean', 'Guitar', 'Butterfly', 'Telescope', 'Waterfall', 'Volcano'];
-  const recordingTime = 30;
-
+  const [mediaRecorder, setMediaRecorder] = useState(null);
+  const [audioBlob, setAudioBlob] = useState(null);
+  const [audioUrl, setAudioUrl] = useState(null);
+  const [showRecorder, setShowRecorder] = useState(false);
+  const [currentWordIndex, setCurrentWordIndex] = useState(0);
+  const [countdown, setCountdown] = useState(10);
+  const [words, setWords] = useState([]);
+  const [error, setError] = useState(null);
+  const chunksRef = useRef([]);
+  const [authToken, setAuthToken] = useState('');
   useEffect(() => {
-    let interval;
-    if (stage === 'showWords' && currentWordIndex < words.length) {
-      interval = setInterval(() => {
-        setTimer((prevTimer) => {
-          if (prevTimer === 0) {
-            setCurrentWordIndex((prevIndex) => prevIndex + 1);
-            return 5;
-          }
-          return prevTimer - 1;
-        });
-      }, 1000);
-    }
-    return () => clearInterval(interval);
-  }, [stage, currentWordIndex]);
+    const urlParts = window.location.pathname.split('/');
+    setPatientId(urlParts[1]);
 
-  useEffect(() => {
-    if (currentWordIndex === words.length) {
-      setStage('recording');
-      setTimer(recordingTime);
-    }
-  }, [currentWordIndex]);
-
-  const handleStartRecording = () => {
-    const recorder = new MicRecorder({
-      bitRate: 128,
-      encoder: 'wav',
-      sampleRate: 44100,
-    });
-    recorder
-      .start()
-      .then(() => {
-        setIsRecording(true);
-        setRecordingStarted(true);
-        recorderRef.current = recorder;
-      })
-      .catch((e) => {
-        console.error('Error starting recorder:', e);
+    const fetchAuthToken = async () => {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_NGROK_URL}/auth-token`, {
+        credentials: "include", // Include cookies in the request
       });
+      const data = await response.json();
+      console.log("Auth Token:", data.auth_token);
+      setAuthToken(data.auth_token);
+    };
+
+    fetchAuthToken();
+  }, []);
+  // Fetch words from the API
+  const fetchWords = async () => {
+    try {
+      console.log('Fetching words...');
+      const response = await fetch(`${process.env.NEXT_PUBLIC_NGROK_URL}/word-recall/generate-words`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+        },
+        credentials: 'include',
+      });
+
+      console.log('Response status:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Response not OK:', errorText);
+        throw new Error(`Failed to fetch words: ${response.status} ${response.statusText}`);
+      }
+
+      const responseText = await response.text();
+      console.log('Raw response:', responseText);
+
+      let wordList;
+      try {
+        wordList = JSON.parse(responseText);
+      } catch (e) {
+        console.error('Failed to parse JSON:', e);
+        throw new Error('Invalid JSON response from server');
+      }
+
+      console.log('Parsed word list:', wordList);
+
+      if (!Array.isArray(wordList["word_list"])) {
+        throw new Error('Server did not return an array of words');
+      }
+
+      setWords(wordList["word_list"]);
+      setError(null);
+    } catch (error) {
+      console.error('Error in fetchWords:', error);
+      setError(error.message);
+    }
+  };
+
+  // Initial fetch of words
+  useEffect(() => {
+    fetchWords();
+  }, []);
+
+  // Handle word changes
+  useEffect(() => {
+    if (words.length > 0 && currentWordIndex < words.length) {
+      const wordTimer = setTimeout(() => {
+        setCurrentWordIndex(prevIndex => prevIndex + 1);
+        setCountdown(10);
+      }, 10000);
+
+      return () => clearTimeout(wordTimer);
+    } else if (words.length > 0 && currentWordIndex === words.length) {
+      setShowRecorder(true);
+    }
+  }, [currentWordIndex, words.length]);
+
+  // Handle countdown
+  useEffect(() => {
+    if (words.length > 0 && currentWordIndex < words.length && !showRecorder) {
+      const countdownTimer = setInterval(() => {
+        setCountdown(prev => Math.max(0, prev - 1));
+      }, 1000);
+
+      return () => clearInterval(countdownTimer);
+    }
+  }, [currentWordIndex, words.length, showRecorder]);
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          chunksRef.current.push(event.data);
+        }
+      };
+      recorder.onstop = () => {
+        const audioBlob = new Blob(chunksRef.current, { type: 'audio/wav' });
+        const audioUrl = URL.createObjectURL(audioBlob);
+        setAudioBlob(audioBlob);
+        setAudioUrl(audioUrl);
+        chunksRef.current = [];
+      };
+      setMediaRecorder(recorder);
+      recorder.start();
+      setIsRecording(true);
+    } catch (error) {
+      console.error('Error accessing microphone:', error);
+      alert('Error accessing microphone. Please allow microphone access.');
+    }
   };
 
   const stopRecording = () => {
-    if (recorderRef.current && isRecording) {
-      recorderRef.current
-        .stop()
-        .getAudio()
-        .then(([buffer, blob]) => {
-          const file = new File(buffer, `word_recall_attempt_${attempt}.wav`, {
-            type: blob.type,
-            lastModified: Date.now(),
-          });
-          const url = URL.createObjectURL(file);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = `word_recall_attempt_${attempt}.wav`;
-          a.click();
-          setIsRecording(false);
-        })
-        .catch((e) => {
-          console.error('Error stopping recorder:', e);
-        });
+    if (mediaRecorder) {
+      mediaRecorder.stop();
+      mediaRecorder.stream.getTracks().forEach(track => track.stop());
+      setIsRecording(false);
     }
   };
 
-  const nextAttempt = () => {
-    if (attempt < 3) {
-      setAttempt(attempt + 1);
-      setStage('showWords');
-      setCurrentWordIndex(0);
-      setTimer(5);
-      setRecordingStarted(false);
-    } else {
-      setStage('finished');
-    }
-  };
-
-  const moveToNextTest = () => {
-    const targetUrl = `/${patient_id}/start-orientation-test`;
-    router.push(targetUrl);
-  };
-
-  const onDrop = useCallback((acceptedFiles) => {
-    const file = acceptedFiles[0];
-    if (file && file.type.startsWith('audio/')) {
-      setAudioFile(file);
-      setError('');
-    } else {
-      setError('Please upload a valid audio file');
-    }
-  }, []);
-
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
-    accept: {
-      'audio/*': ['.mp3', '.wav', '.m4a']
-    },
-    multiple: false
-  });
-
-  const handleUpload = async () => {
-    if (!audioFile) {
-      setError('Please select an audio file first');
+  // const saveToComputer = () => {
+  //   if (audioBlob) {
+  //     const a = document.createElement('a');
+  //     a.href = audioUrl;
+  //     a.download = 'recording.wav';
+  //     a.click();
+  //     URL.revokeObjectURL(audioUrl);
+  //     alert('Audio saved to your computer!');
+  //   } else {
+  //     alert('No audio to save.');
+  //   }
+  // };
+  const saveToComputer = async () => {
+    if (!audioBlob) {
+      alert('No audio to send.');
       return;
     }
-
-    setIsUploading(true);
+  
     try {
-      // Simulate API call with a delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Simulate successful upload
-      console.log('Audio file received:', audioFile.name);
-      
-      // Clear the audio file and error states
-      setAudioFile(null);
-      setError('');
-      
-      // Set recording as started and completed to show the next attempt button
-      setRecordingStarted(true);
-      setIsRecording(false);
-
-      /* TODO: Implement actual API call later
-      const formData = new FormData();
-      formData.append('audio', audioFile);
-
-      const response = await fetch('http://localhost:8000/upload-audio', {
-        method: 'POST',
-        credentials: 'include',
-        body: formData,
+      // Fetch the auth token from the /auth-token API endpoint
+      const response = await fetch(`${process.env.NEXT_PUBLIC_NGROK_URL}/auth-token`, {
+        credentials: 'include', // Ensure cookies (like auth_token) are sent
       });
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Upload successful:', data);
-      } else {
-        const errorData = await response.json();
-        setError(errorData.detail || 'Failed to upload audio file');
+  
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Error fetching auth token:', errorText);
+        alert('Failed to fetch auth token.');
+        return;
       }
-      */
-      
-    } catch (err) {
-      setError('Error uploading file: ' + err.message);
-    } finally {
-      setIsUploading(false);
+  
+      const data = await response.json();
+      const authToken = data.auth_token;
+  
+      if (!authToken) {
+        alert('No auth_token found. Please log in.');
+        return;
+      }
+  
+      // Log the auth token for debugging
+      console.log('Auth Token:', authToken);
+  
+      // Create a FormData object
+      const formData = new FormData();
+      formData.append('audio_file', audioBlob, 'recording.wav');
+  
+      // Make the POST request with the audio file and auth token in headers
+      const postResponse = await fetch(`${process.env.NEXT_PUBLIC_NGROK_URL}/word-recall`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${authToken}`, // Explicitly pass the token in headers
+        },
+        body: formData,
+        credentials: 'include', // This ensures cookies (like auth_token) are sent
+      });
+  
+      if (!postResponse.ok) {
+        const errorText = await postResponse.text();
+        console.error('Error uploading audio:', errorText);
+        alert('Error uploading audio.');
+      } else {
+        alert('Audio uploaded successfully!');
+      }
+    } catch (error) {
+      console.error('Error sending audio to API:', error);
+      alert('Error sending audio to API.');
     }
+  };
+  
+  
+
+  const clearRecording = () => {
+    setAudioBlob(null);
+    setAudioUrl(null);
+    chunksRef.current = [];
   };
 
   return (
-    <div className="container mx-auto p-4 flex flex-col items-center justify-center">
-      <TaskHeading heading="Word Recall Test" />
-      <SubHeading subhead={`Attempt: ${attempt}`} />
-
-      {stage === 'showWords' && currentWordIndex < words.length && (
-        <div className="mb-4 flex flex-col items-center justify-center">
-          <WordDisplay word={words[currentWordIndex]} />
-          <div className="clock flex items-center justify-center">
-            <Image src={clock} height={20} width={20} alt="Clock" className="text-black mr-2" />
-            <p>{timer} seconds</p>
-          </div>
-          <Paragraph para="Read it out loud and try to remember it" />
-        </div>
-      )}
-
-      {stage === 'recording' && (
-        <div className="mb-4 flex flex-col items-center justify-center">
-          <Paragraph para="Now speak out all the words you remember in any sequence" />
-          {!recordingStarted ? (
-            <div className="flex flex-col items-center w-full max-w-md">
-              <div 
-                {...getRootProps()} 
-                className={`w-full border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors
-                  ${isDragActive ? 'border-green-500 bg-green-50' : 'border-gray-300 hover:border-green-400'}
-                  ${error ? 'border-red-500' : ''}`}
-              >
-                <input {...getInputProps()} />
-                {isDragActive ? (
-                  <p className="text-green-600">Drop the audio file here...</p>
-                ) : (
-                  <div>
-                    <p className="text-gray-600">Drag and drop an audio file here, or click to select</p>
-                    <p className="text-sm text-gray-500 mt-2">Supported formats: MP3, WAV, M4A</p>
-                  </div>
-                )}
-              </div>
-
-              {audioFile && (
-                <div className="mt-4">
-                  <p className="text-sm text-gray-600">Selected file: {audioFile.name}</p>
-                </div>
-              )}
-
-              {error && (
-                <p className="mt-2 text-sm text-red-600">{error}</p>
-              )}
-
-              <button
-                onClick={handleUpload}
-                disabled={!audioFile || isUploading}
-                className={`mt-6 w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white 
-                  ${!audioFile || isUploading 
-                    ? 'bg-gray-400 cursor-not-allowed' 
-                    : 'bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500'
-                  }`}
-              >
-                {isUploading ? 'Uploading...' : 'Upload Audio'}
-              </button>
-            </div>
-          ) : (
-            <>
-              {/* <button
-                className="bg-red-500 text-white text-[1.5rem] mt-4 px-4 py-2 rounded"
-                onClick={stopRecording}
-              >
-                Stop lol
-              </button> */}
-            </>
-          )}
-          {!isRecording && recordingStarted && (
-            <button
-              className="bg-green-800 text-white text-[1.5rem] mt-4 px-4 py-2 rounded"
-              onClick={attempt < 3 ? nextAttempt : moveToNextTest}
-            >
-              {attempt < 3 ? `Attempt ${attempt + 1}` : 'Move to Next Test'}
-            </button>
-          )}
-        </div>
-      )}
-
-      {stage === 'finished' && (
-        <div>
-          <h2 className="text-2xl mb-2">Test Completed</h2>
-          <p>Thank you for participating in the Word Recall Test.</p>
-          <button
-            className="bg-blue-500 text-white text-[1.5rem] mt-4 px-4 py-2 rounded"
-            onClick={moveToNextTest}
+    <div className="flex flex-col items-center mt-12 font-sans">
+      {error ? (
+        <div className="text-red-500">
+          <p>Error loading words: {error}</p>
+          <button 
+            className="bg-blue-500 text-white px-4 py-2 rounded mt-2"
+            onClick={() => {
+              setError(null);
+              fetchWords();
+            }}
           >
-            Move to Next Test
+            Retry
           </button>
         </div>
+      ) : !showRecorder ? (
+        <div className="text-center">
+          <TaskHeading heading="Word Recall" />
+          {words.length > 0 && currentWordIndex < words.length ? (
+            <>
+              <div className="text-5xl font-semibold mb-4 border-2 border-black p-4 rounded-lg w-[400px] h-[100px] flex justify-center items-centre">
+                {words[currentWordIndex]}
+              </div>
+              <div className="text-lg text-gray-600">
+                Word {currentWordIndex + 1} of {words.length}
+              </div>
+              <div className="mt-4 text-lg text-gray-600">
+                Next word in {countdown} seconds...
+              </div>
+            </>
+          ) : (
+            <div className="text-2xl">Preparing recorder...</div>
+          )}
+        </div>
+      ) : (
+        <>
+          <TaskHeading heading="Word Recall Test" />
+          <div className="space-x-4 mb-6">
+            <button
+              onClick={isRecording ? stopRecording : startRecording}
+              className={`px-6 py-3 text-lg text-white rounded-lg transition-colors ${
+                isRecording ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'
+              }`}
+            >
+              {isRecording ? (
+                <>
+                  <span className="mr-2">●</span> Stop Recording
+                </>
+              ) : (
+                'Start Recording'
+              )}
+            </button>
+            <button
+              onClick={saveToComputer}
+              disabled={!audioBlob}
+              className={`px-6 py-3 text-lg text-white rounded-lg transition-colors ${
+                audioBlob ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-400'
+              }`}
+            >
+              Upload
+            </button>
+            <button
+              onClick={clearRecording}
+              disabled={!audioBlob}
+              className={`px-6 py-3 text-lg text-white rounded-lg transition-colors ${
+                audioBlob ? 'bg-red-500 hover:bg-red-600' : 'bg-gray-400'
+              }`}
+            >
+              Clear Recording
+            </button>
+          </div>
+          {audioUrl && (
+            <div className="mt-6">
+              <h2 className="text-2xl mb-4">Playback</h2>
+              <audio controls src={audioUrl} className="mb-6" />
+            </div>
+          )}
+          {isRecording && (
+            <p className="text-red-500 mt-4">
+              Recording in progress...
+            </p>
+          )}
+        </>
       )}
     </div>
   );
 };
 
-export default Page;
+export default WordDisplayRecorder;

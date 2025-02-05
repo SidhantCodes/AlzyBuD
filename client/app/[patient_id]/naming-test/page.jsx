@@ -10,7 +10,7 @@ const Page = () => {
     const params = useParams();
     const [currentTrial, setCurrentTrial] = useState(1);
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
-    const [attempts, setAttempts] = useState(0);
+    const [attempts, setAttempts] = useState(1);
     const [showHint, setShowHint] = useState(false);
     const [userInput, setUserInput] = useState('');
 
@@ -54,7 +54,7 @@ const Page = () => {
             // Move to next image
             if (currentImageIndex < 4) {
                 setCurrentImageIndex(prev => prev + 1);
-                setAttempts(0);
+                setAttempts(1);
                 setShowHint(false);
                 setUserInput('');
             } else {
@@ -63,7 +63,7 @@ const Page = () => {
                     // Move to next trial
                     setCurrentTrial(prev => prev + 1);
                     setCurrentImageIndex(0);
-                    setAttempts(0);
+                    setAttempts(1);
                     setShowHint(false);
                     setUserInput('');
                 } else {
@@ -73,11 +73,23 @@ const Page = () => {
                 }
             }
         } else {
-            // Wrong answer
-            const newAttempts = attempts + 1;
-            setAttempts(newAttempts);
-            if (newAttempts >= 3) {
-                setShowHint(true);
+            // Wrong answer, still move to next image
+            if (currentImageIndex < 4) {
+                setCurrentImageIndex(prev => prev + 1);
+                setAttempts(1);
+                setShowHint(false);
+                setUserInput('');
+            } else {
+                // Completed all 5 images in current trial
+                if (currentTrial < 3) {
+                    setCurrentTrial(prev => prev + 1);
+                    setCurrentImageIndex(0);
+                    setAttempts(1);
+                    setShowHint(false);
+                    setUserInput('');
+                } else {
+                    alert('All trials completed!');
+                }
             }
         }
     };

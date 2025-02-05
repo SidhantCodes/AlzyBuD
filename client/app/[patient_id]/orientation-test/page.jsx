@@ -1,9 +1,14 @@
-'use client'
+"use client"
 import React, { useState, useEffect } from 'react';
-
 
 const Page = () => {
   const [patientId, setPatientId] = useState('');
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [answer, setAnswer] = useState('');
+  const [answers, setAnswers] = useState([]);
+  const [isOnScreenKeyboard, setIsOnScreenKeyboard] = useState(true);
+  const [authToken, setAuthToken] = useState('');
+
   const questions = [
     'Please state your full name',
     `What day of the week is it?`,
@@ -15,14 +20,22 @@ const Page = () => {
     `Where are we now?`,
   ];
 
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [answer, setAnswer] = useState('');
-  const [answers, setAnswers] = useState([]);
-  const [isOnScreenKeyboard, setIsOnScreenKeyboard] = useState(true);
+  
 
   useEffect(() => {
     const urlParts = window.location.pathname.split('/');
     setPatientId(urlParts[1]);
+
+    const fetchAuthToken = async () => {
+      const response = await fetch("http://localhost:8000/auth-token", {
+        credentials: "include", // Include cookies in the request
+      });
+      const data = await response.json();
+      console.log("Auth Token:", data.auth_token);
+      setAuthToken(data.auth_token);
+    };
+
+    fetchAuthToken();
   }, []);
 
   const alphabet = Array.from({ length: 26 }, (_, i) => String.fromCharCode(65 + i));
@@ -42,18 +55,43 @@ const Page = () => {
     setAnswer(prev => prev.slice(0, -1));
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const updatedAnswers = [...answers, answer];
     setAnswers(updatedAnswers);
     setAnswer('');
-
+  
     if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex(prev => prev + 1);
     } else {
-      console.log('All answers:', updatedAnswers);
-      window.location.href = `/${patientId}/naming-task`;
+      console.log('Submitting answers:', updatedAnswers);
+      console.log('Auth Token:', authToken);
+  
+      try {
+        const response = await fetch('http://localhost:8000/orientation-test', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            // Authorization: `Bearer ${authToken}`, // Use this if backend expects a Bearer token
+          },
+          // Uncomment below if the backend requires the token as a cookie
+          credentials: 'include',
+          body: JSON.stringify({ responses: updatedAnswers }),
+        });
+  
+        if (!response.ok) {
+          const errorDetails = await response.text(); // Fetch response body to debug further
+          console.error('Response error:', errorDetails);
+          throw new Error('Failed to submit answers');
+        }
+  
+        console.log('Submission successful');
+        window.location.href = `/${patientId}/naming-task`;
+      } catch (error) {
+        console.error('Error submitting answers:', error);
+      }
     }
   };
+  
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-white p-4">
