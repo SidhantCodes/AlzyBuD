@@ -10,7 +10,7 @@ import SubHeading from "./components/SubHeading/SubHeading";
 export default function MainPage() {
   return (
       <div className="flex-col py-10 mx-4 ">
-        <Navbar />
+        {/* <Navbar /> */}
         <div className="title mt-28 flex-col justify-center">
           <SubHeading subhead={`Your gateway to streamlined `} />
           <Heading heading={`Alzheimer's care solutions`} />

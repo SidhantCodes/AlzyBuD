@@ -214,7 +214,7 @@ const WordDisplayRecorder = () => {
   const fetchWords = async () => {
     try {
       console.log('Fetching words...');
-      const response = await fetch(`${process.env.NEXT_PUBLIC_NGROK_URL}/word-recall/generate-words`, {
+      const response = await fetch(`http://localhost:8000/word-recall/generate-words`, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',

@@ -10,13 +10,14 @@
   },
   "dependencies": {
     "antd": "^5.23.3",
-    "mic-recorder": "^4.9.0",
     "dotenv": "^16.4.7",
     "js-cookie": "^3.0.5",
+    "mic-recorder": "^4.9.0",
     "next": "15.1.6",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-dropzone": "^14.3.5",
+    "react-sketch-canvas": "^6.2.0",
     "recorder-js": "^1.0.7"
   },
   "devDependencies": {

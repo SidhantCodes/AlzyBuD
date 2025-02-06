@@ -1,7 +1,7 @@
 'use client';
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Navbar from '../components/Navbar/Navbar';
+// import Navbar from '../components/Navbar/Navbar';
 import SubHeading from '../components/SubHeading/SubHeading';
 import Heading from '../components/Heading/Heading';
 // import Cookies from 'js-cookie';
@@ -70,7 +70,7 @@ const Page = () => {
 
   return (
     <div className="flex flex-col py-10 mx-4">
-      <Navbar />
+      {/* <Navbar /> */}
       <div className="title mt-28 flex flex-col justify-center items-center">
         <SubHeading subhead={`Your gateway to streamlined`} />
         <Heading heading={`Alzheimer's care solutions`} />

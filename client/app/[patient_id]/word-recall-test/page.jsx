@@ -1,5 +1,6 @@
 "use client"
 import { useState, useRef, useEffect } from 'react';
+import { useRouter, useParams } from 'next/navigation';
 import TaskHeading from '../../components/TaskHeading/TaskHeading';
 
 const WordDisplayRecorder = () => {
@@ -15,12 +16,13 @@ const WordDisplayRecorder = () => {
   const [error, setError] = useState(null);
   const chunksRef = useRef([]);
   const [authToken, setAuthToken] = useState('');
+  const router = useRouter();
   useEffect(() => {
     const urlParts = window.location.pathname.split('/');
     setPatientId(urlParts[1]);
 
     const fetchAuthToken = async () => {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_NGROK_URL}/auth-token`, {
+      const response = await fetch(`http://localhost:8000/auth-token`, {
         credentials: "include", // Include cookies in the request
       });
       const data = await response.json();
@@ -34,7 +36,7 @@ const WordDisplayRecorder = () => {
   const fetchWords = async () => {
     try {
       console.log('Fetching words...');
-      const response = await fetch(`${process.env.NEXT_PUBLIC_NGROK_URL}/word-recall/generate-words`, {
+      const response = await fetch(`http://localhost:8000/word-recall/generate-words`, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
@@ -137,19 +139,6 @@ const WordDisplayRecorder = () => {
       setIsRecording(false);
     }
   };
-
-  // const saveToComputer = () => {
-  //   if (audioBlob) {
-  //     const a = document.createElement('a');
-  //     a.href = audioUrl;
-  //     a.download = 'recording.wav';
-  //     a.click();
-  //     URL.revokeObjectURL(audioUrl);
-  //     alert('Audio saved to your computer!');
-  //   } else {
-  //     alert('No audio to save.');
-  //   }
-  // };
   const saveToComputer = async () => {
     if (!audioBlob) {
       alert('No audio to send.');
@@ -158,7 +147,7 @@ const WordDisplayRecorder = () => {
   
     try {
       // Fetch the auth token from the /auth-token API endpoint
-      const response = await fetch(`${process.env.NEXT_PUBLIC_NGROK_URL}/auth-token`, {
+      const response = await fetch(`http://localhost:8000/auth-token`, {
         credentials: 'include', // Ensure cookies (like auth_token) are sent
       });
   
@@ -185,7 +174,7 @@ const WordDisplayRecorder = () => {
       formData.append('audio_file', audioBlob, 'recording.wav');
   
       // Make the POST request with the audio file and auth token in headers
-      const postResponse = await fetch(`${process.env.NEXT_PUBLIC_NGROK_URL}/word-recall`, {
+      const postResponse = await fetch(`http://localhost:8000/word-recall`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${authToken}`, // Explicitly pass the token in headers
@@ -200,6 +189,8 @@ const WordDisplayRecorder = () => {
         alert('Error uploading audio.');
       } else {
         alert('Audio uploaded successfully!');
+        router.push(`/${patientId}/start-orientation-test/`)
+        
       }
     } catch (error) {
       console.error('Error sending audio to API:', error);
@@ -216,7 +207,7 @@ const WordDisplayRecorder = () => {
   };
 
   return (
-    <div className="flex flex-col items-center mt-12 font-sans">
+    <div className="flex flex-col items-center font-sans mt-44">
       {error ? (
         <div className="text-red-500">
           <p>Error loading words: {error}</p>
@@ -288,7 +279,7 @@ const WordDisplayRecorder = () => {
           </div>
           {audioUrl && (
             <div className="mt-6">
-              <h2 className="text-2xl mb-4">Playback</h2>
+              <h2 className="text-2xl mb-4">Preview your speech</h2>
               <audio controls src={audioUrl} className="mb-6" />
             </div>
           )}
