@@ -64,27 +64,12 @@ def hash_password(password: str):
     salt = bcrypt.gensalt()
     return bcrypt.hashpw(password.encode('utf-8'), salt).decode('utf-8')
 
-# Function to send email using Brevo SMTP
-# def send_email(to_email: str, patient_id: str, password: str):
-#     subject = "Your Patient ID and Password"
-#     body = f"Your Patient ID: {patient_id}\nYour Password: {password}"
-
-#     msg = MIMEText(body)
-#     msg['Subject'] = subject
-#     msg['From'] = SENDER_EMAIL
-#     msg['To'] = to_email
-
-#     try:
-#         with smtplib.SMTP(BREVO_SMTP_SERVER, BREVO_SMTP_PORT) as server:
-#             server.starttls()
-#             server.login(SENDER_EMAIL, SMTP_PASSWORD)
-#             server.sendmail(SENDER_EMAIL, to_email, msg.as_string())
-#         print(f"Email successfully sent to {to_email}")  # Print statement on successful send
-#     except Exception as e:
-#         raise HTTPException(status_code=500, detail=f"Failed to send email: {str(e)}")
 @app.options("/login")
 async def preflight():
     return {}
+@app.get("/")
+async def default():
+    return {"message": "Hello from the server"}
 @app.post("/add_patient")
 async def add_patient(patient: PatientDetails):
     patient_id = generate_patient_id()
@@ -108,6 +93,15 @@ async def add_patient(patient: PatientDetails):
 async def get_auth_token(request: Request):
     auth_token = request.cookies.get("auth_token")
     return {"auth_token": auth_token}
+
+@app.get("/patient/{patient_id}/scores")
+async def get_patient_scores(patient_id: str):
+    patient = patients_collection.find_one({"patient_id": patient_id})
+    if not patient:
+        raise HTTPException(status_code=404, detail="Patient not found")
+    
+    scores = patient.get("scores", [])
+    return {"patient_id": patient_id, "scores": scores}
 
 if __name__ == "__main__":
     import uvicorn
